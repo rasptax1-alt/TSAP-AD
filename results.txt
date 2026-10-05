@@ -1,0 +1,161 @@
+============================================================================================
+TSAP-AD v4  |  reviewer-response experiment
+============================================================================================
+python/numba/scipy/sklearn/xgboost/shap : 3.13.7 | 0.62.1 | 1.16.2 | 1.5.2 | 3.1.1 | 0.50.0
+xgboost exposes base_score kwarg: False
+XGB params : {'n_estimators': 100, 'max_depth': 3, 'learning_rate': 0.05, 'subsample': 1.0, 'colsample_bytree': 0.6, 'min_child_weight': 1, 'gamma': 0.0, 'reg_lambda': 1.0, 'objective': 'binary:logistic', 'tree_method': 'hist', 'eval_metric': 'logloss', 'n_jobs': 4}
+XGB rationale : shallow (depth 3), column-subsampled (0.6) trees fixed a priori to keep the model small and per-instance latency bounded for edge deployment; not tuned on the folds.
+TARGET_PER_CLASS=6000  BLOCK_COUNT=6  L_WINDOW=10  DTW_STEP=10  W_BAND=2  seeds=[42, 7, 2026]
+
+[1/7] Streaming DNN-EdgeIIoT-dataset.csv ...
+      benign rows read: 24000 | MitM rows read: 1214
+      other attack families seen and excluded (R3-5): {'uploading': 37634, 'sql_injection': 34584, 'ransomware': 10925}
+      event-aware blocks built (chronological order):
+        block 1 | benign  202 | mitm  202 | median MitM idx  1615743
+        block 2 | benign  202 | mitm  202 | median MitM idx  1615945
+        block 3 | benign  202 | mitm  202 | median MitM idx  1616147
+        block 4 | benign  202 | mitm  202 | median MitM idx  1616350
+        block 5 | benign  202 | mitm  202 | median MitM idx  1616552
+        block 6 | benign  202 | mitm  202 | median MitM idx  1616754
+      DTW trajectory column: tcp.len | reference window (earliest benign) = [0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+[2/7] Building temporal features (DTW band w=2, plus rolling statistics)...
+      non-alignable windows (band admitted no path): 0
+      shortcut columns present and removed: ['_gidx', '_atype', '_block', 'Attack_label', 'Attack_type', 'frame.time', 'ip.src_host', 'ip.dst_host', 'arp.src.proto_ipv4', 'arp.dst.proto_ipv4', 'udp.stream', 'tcp.srcport', 'tcp.dstport', 'tcp.seq', 'icmp.transmit_timestamp', 'http.file_data', 'http.request.full_uri', 'tcp.payload', 'dns.qry.name', 'mqtt.msg', 'mqtt.topic']
+      usable rows: 2415 | numeric features: 43 | p(attack)=0.5019
+      NOTE: report this feature count in the paper (manuscript says 61).
+      subspaces: standalone=38 ablation=42 hybrid=43 | declared anchors=['DTW_Warping_Cost', 'tcp.len', 'tcp.flags']
+      expanding-horizon folds (train = all earlier blocks, test = block k+1): [(404, 808), (808, 1212), (1212, 1616), (1616, 2020), (2020, 2415)]
+
+[3/7] Chronological evaluation: 2415 rows, 6 blocks, 5 folds, 3 seeds
+      [guard] fold 1 TRAIN           n=  404  classes=[0, 1] counts=[202, 202]
+      [guard] fold 1 TEST            n=  395  classes=[0, 1] counts=[193, 202]
+  fold 1 seed 42    | A F1=1.00000 B F1=0.99753 C F1=0.81960 D F1=0.99753 | A FN=0 FP=0 | Q=0.158 SHAP-rho=0.749
+  fold 1 seed 7     | A F1=0.99753 B F1=0.99753 C F1=0.81960 D F1=0.99753 | A FN=0 FP=1 | Q=0.158 SHAP-rho=0.746
+  fold 1 seed 2026  | A F1=0.99753 B F1=0.99753 C F1=0.81960 D F1=0.99753 | A FN=0 FP=1 | Q=0.158 SHAP-rho=0.755
+      [guard] fold 2 TRAIN           n=  808  classes=[0, 1] counts=[404, 404]
+      [guard] fold 2 TEST            n=  395  classes=[0, 1] counts=[193, 202]
+  fold 2 seed 42    | A F1=1.00000 B F1=1.00000 C F1=0.82178 D F1=1.00000 | A FN=0 FP=0 | Q=0.149 SHAP-rho=0.740
+  fold 2 seed 7     | A F1=1.00000 B F1=1.00000 C F1=0.82178 D F1=1.00000 | A FN=0 FP=0 | Q=0.149 SHAP-rho=0.738
+  fold 2 seed 2026  | A F1=1.00000 B F1=1.00000 C F1=0.82178 D F1=1.00000 | A FN=0 FP=0 | Q=0.149 SHAP-rho=0.750
+      [guard] fold 3 TRAIN           n= 1212  classes=[0, 1] counts=[606, 606]
+      [guard] fold 3 TEST            n=  395  classes=[0, 1] counts=[193, 202]
+  fold 3 seed 42    | A F1=1.00000 B F1=1.00000 C F1=0.85437 D F1=1.00000 | A FN=0 FP=0 | Q=0.154 SHAP-rho=0.724
+  fold 3 seed 7     | A F1=1.00000 B F1=1.00000 C F1=0.85437 D F1=1.00000 | A FN=0 FP=0 | Q=0.154 SHAP-rho=0.730
+  fold 3 seed 2026  | A F1=1.00000 B F1=1.00000 C F1=0.85437 D F1=1.00000 | A FN=0 FP=0 | Q=0.154 SHAP-rho=0.715
+      [guard] fold 4 TRAIN           n= 1616  classes=[0, 1] counts=[808, 808]
+      [guard] fold 4 TEST            n=  395  classes=[0, 1] counts=[193, 202]
+  fold 4 seed 42    | A F1=1.00000 B F1=1.00000 C F1=0.80702 D F1=1.00000 | A FN=0 FP=0 | Q=0.148 SHAP-rho=0.734
+  fold 4 seed 7     | A F1=1.00000 B F1=1.00000 C F1=0.80702 D F1=1.00000 | A FN=0 FP=0 | Q=0.148 SHAP-rho=0.731
+  fold 4 seed 2026  | A F1=1.00000 B F1=1.00000 C F1=0.80702 D F1=1.00000 | A FN=0 FP=0 | Q=0.148 SHAP-rho=0.719
+      [guard] fold 5 TRAIN           n= 2020  classes=[0, 1] counts=[1010, 1010]
+      [guard] fold 5 TEST            n=  386  classes=[0, 1] counts=[184, 202]
+  fold 5 seed 42    | A F1=0.99507 B F1=0.99507 C F1=0.24719 D F1=0.99507 | A FN=0 FP=2 | Q=0.161 SHAP-rho=0.742
+  fold 5 seed 7     | A F1=0.99507 B F1=0.99507 C F1=0.24719 D F1=0.99507 | A FN=0 FP=2 | Q=0.161 SHAP-rho=0.743
+  fold 5 seed 2026  | A F1=0.99507 B F1=0.99507 C F1=0.24719 D F1=0.99507 | A FN=0 FP=2 | Q=0.161 SHAP-rho=0.721
+
+[4/7] Paired analysis A vs B ...
+{
+  "n_pairs": 15,
+  "delta_f1_mean": 0.00016460905349794015,
+  "delta_f1_std": 0.0006375281228324878,
+  "delta_f1_min": 0.0,
+  "delta_f1_max": 0.0024691358024691024,
+  "n_A_better": 1,
+  "n_tied": 14,
+  "n_B_better": 0,
+  "paired_t_stat": 1.0000000000000002,
+  "paired_t_p": 0.3342819433946572,
+  "wilcoxon_stat": 0.0,
+  "wilcoxon_p": 0.31731050786291415,
+  "ci95_low": 0.0,
+  "ci95_high": 0.0004938271604938205,
+  "bootstrap_resamples": 2000
+}
+
+============================================================================================
+TABLE 2 (revised) | per-fold detection performance, mean over seeds
+============================================================================================
+                                                  F1   F1_std      Acc      Rec     Prec         TN        FP     FN     TP
+Config                                 Fold                                                                                
+A Hybrid (XGB + DTW)                   1     0.99835  0.00143  0.99831  1.00000  0.99672  192.33333   0.66667    0.0  202.0
+                                       2     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       3     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       4     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       5     0.99507  0.00000  0.99482  1.00000  0.99020  182.00000   2.00000    0.0  202.0
+B Standalone XGB (no temporal feature) 1     0.99753  0.00000  0.99747  1.00000  0.99507  192.00000   1.00000    0.0  202.0
+                                       2     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       3     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       4     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       5     0.99507  0.00000  0.99482  1.00000  0.99020  182.00000   2.00000    0.0  202.0
+C Rule-based DTW threshold             1     0.81960  0.00000  0.79494  0.91089  0.74494  130.00000  63.00000   18.0  184.0
+                                       2     0.82178  0.00000  0.81772  0.82178  0.82178  157.00000  36.00000   36.0  166.0
+                                       3     0.85437  0.00000  0.84810  0.87129  0.83810  159.00000  34.00000   26.0  176.0
+                                       4     0.80702  0.00000  0.80506  0.79703  0.81726  157.00000  36.00000   41.0  161.0
+                                       5     0.24719  0.00000  0.47927  0.16337  0.50769  152.00000  32.00000  169.0   33.0
+D XGB + rolling-statistics ablation    1     0.99753  0.00000  0.99747  1.00000  0.99507  192.00000   1.00000    0.0  202.0
+                                       2     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       3     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       4     1.00000  0.00000  1.00000  1.00000  1.00000  193.00000   0.00000    0.0  202.0
+                                       5     0.99507  0.00000  0.99482  1.00000  0.99020  182.00000   2.00000    0.0  202.0
+
+============================================================================================
+TABLE 3 (revised) | aggregates | FN_sum vs FN_mean (R2-6)
+============================================================================================
+                                        F1_mean   F1_std  Acc_mean  Rec_mean  Prec_mean  FN_sum  FN_mean  FP_sum   FP_mean
+Config                                                                                                                    
+A Hybrid (XGB + DTW)                    0.99869  0.00205   0.99863   1.00000    0.99738       0      0.0       8   0.53333
+B Standalone XGB (no temporal feature)  0.99852  0.00204   0.99846   1.00000    0.99705       0      0.0       9   0.60000
+C Rule-based DTW threshold              0.70999  0.24007   0.74902   0.71287    0.74595     870     58.0     603  40.20000
+D XGB + rolling-statistics ablation     0.99852  0.00204   0.99846   1.00000    0.99705       0      0.0       9   0.60000
+
+============================================================================================
+TABLE 5 (new) | quantified drift per fold (R3-4)
+============================================================================================
+ Fold  mean_KS  max_KS  mean_Wasserstein  mean_PSI  max_PSI  delta_prior
+    1   0.0280  0.2748      2265297.0920    0.0490   1.2887       0.0114
+    2   0.0180  0.1215      1642780.5220    0.0680   1.3904       0.0114
+    3   0.0201  0.1735      2252397.1161    0.0630   1.2353       0.0114
+    4   0.0136  0.1380      1672088.0453    0.0619   1.2921       0.0114
+    5   0.0521  0.3561      2521553.8710    0.3348   4.0798       0.0233
+
+============================================================================================
+TABLE 6 (new) | explanation quality vs TreeSHAP (R3-1, R3-2)
+============================================================================================
+      Q_declared  Q_derived  cosine_signature  spearman_vs_treeshap  top4_jaccard_vs_treeshap  deletion_fidelity_SNDA  deletion_fidelity_treeshap  efficiency_residual  stability_L1_rel
+Seed                                                                                                                                                                                    
+7         0.1538     0.5908            0.8484                0.7376                    0.4758                 -0.7429                     -0.9757               0.0005            0.3936
+42        0.1539     0.5910            0.8485                0.7378                    0.4791                 -0.7494                     -0.9753               0.0005            0.1800
+2026      0.1538     0.5909            0.8485                0.7319                    0.4991                 -0.7167                     -0.9719               0.0006            0.1777
+
+============================================================================================
+PARTITION TABLE (R3-5)
+============================================================================================
+ Fold  n_train  n_test  train_benign  train_attack  test_benign  test_attack  train_prior  test_prior  gidx_train_end  gidx_test_start  test_block
+    1      404     395           202           202          193          202          0.5    0.511392           23604            23614           2
+    2      808     395           404           404          193          202          0.5    0.511392           23402            23412           3
+    3     1212     395           606           606          193          202          0.5    0.511392           23200            23210           4
+    4     1616     395           808           808          193          202          0.5    0.511392           22998            23008           5
+    5     2020     386          1010          1010          184          202          0.5    0.523316           22796            22806           6
+
+[5/7] Band sensitivity sweep (w in [1, 2, 3, 999]) ...
+            mean      std
+w                        
+1          0.999  0.00224
+2          0.999  0.00224
+3          0.999  0.00224
+unbounded  0.999  0.00224
+
+[6/7] Timing the complete evaluated pipeline ...
+{
+  "window_assembly_ms": 0.0,
+  "dtw_ms": 0.0033,
+  "xgboost_inference_ms": 0.9846,
+  "snda_attribution_ms": 2.1239,
+  "total_ms_excl_shap": 3.1119,
+  "treeshap_ms": 1.6132,
+  "total_ms_incl_treeshap": 4.7251,
+  "windows_per_second": 321.3,
+  "packets_per_second": 3213.5,
+  "note": "single-instance warm measurement; packet capture, parsing, I/O and alerting are EXCLUDED; packets/s assumes non-overlapping windows (DTW_STEP == L_WINDOW)."
+}
